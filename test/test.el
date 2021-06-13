@@ -42,5 +42,10 @@
     (should (equal (org-super-clock-report--count-clock-duration headline-ast)
                    "3:17"))))
 
+(ert-deftest org-super-clock-report-query-from-regexp ()
+  (with-current-buffer (find-file org-super-clock-report-test-org-file)
+    (should (equal (org-super-clock-report--query-from-regexp "render")
+                   '("Wait for render to finish" "3:17")))))
+
 (provide 'test)
 ;;; test.el ends here

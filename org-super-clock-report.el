@@ -54,10 +54,8 @@
            (cl-incf total-duration (org-duration-to-minutes tmp-duration))))))
     (org-duration-from-minutes total-duration)))
 
-(defun org-super-clock-report-from-regexp (regexp)
-  "Create clock report from REGEXP."
-  (unless (eq major-mode 'org-mode)
-    (error "Not in org-mode"))
+(defun org-super-clock-report--query-from-regexp (regexp)
+  "Collect clock report information given REGEXP meant for display."
   (let* ((ast (org-super-clock-report--get-ast (current-buffer)))
          (target-asts (org-super-clock-report--regexp-headlines ast regexp))
          (headline-duration-plist))
@@ -67,27 +65,37 @@
              headline-duration-plist
              (plist-get (cl-second this-ast) :raw-value)
              (org-super-clock-report--count-clock-duration this-ast))))
-    ; Kill the bufffer so that we don't have to do the clean-up ourselves
-    (when (get-buffer org-super-clock-report-buffer-name)
-      (kill-buffer org-super-clock-report-buffer-name))
-    (with-current-buffer (get-buffer-create org-super-clock-report-buffer-name)
-      (org-mode)
-      (insert "| Headline | Duration |\n")
-      (insert "|-\n")
-      (cl-do ((this-plist headline-duration-plist (cddr this-plist)))
-          ((not this-plist) nil)
-        (insert "|" (cl-first this-plist)
-                "|" (cl-second this-plist) "|\n"))
-      (switch-to-buffer org-super-clock-report-buffer-name)
-      ; Use org's C-c C-c to have a properly aligned table.
-      ; This is done at the second line because "|-" line needs to be C-c C-c
-      ; specifically. It updates the whole table as well.
-      (save-excursion
-        (goto-char (point-min))
-        (forward-line)
-        (org-ctrl-c-ctrl-c))
-      (read-only-mode)
-      )))
+    headline-duration-plist))
+
+(defun org-super-clock-report--display (display-data-plist)
+  "Create clock report from DISPLAY-DATA-PLIST."
+  (unless (eq major-mode 'org-mode)
+    (error "Not in org-mode"))
+  ;; Kill the bufffer so that we don't have to do the clean-up ourselves
+  (when (get-buffer org-super-clock-report-buffer-name)
+    (kill-buffer org-super-clock-report-buffer-name))
+  (with-current-buffer (get-buffer-create org-super-clock-report-buffer-name)
+    (org-mode)
+    (insert "| Headline | Duration |\n")
+    (insert "|-\n")
+    (cl-do ((this-plist display-data-plist (cddr this-plist)))
+        ((not this-plist) nil)
+      (insert "|" (cl-first this-plist)
+              "|" (cl-second this-plist) "|\n"))
+    (switch-to-buffer org-super-clock-report-buffer-name)
+    ;; Use org's C-c C-c to have a properly aligned table.
+    ;; This is done at the second line because "|-" line needs to be C-c C-c
+    ;; specifically. It updates the whole table as well.
+    (save-excursion
+      (goto-char (point-min))
+      (forward-line)
+      (org-ctrl-c-ctrl-c))
+    (read-only-mode)))
+
+(defun org-super-clock-report-from-regexp (regexp)
+  "Display clock-report table for headlines which match REGEXP."
+  (org-super-clock-report--display
+   (org-super-clock-report--query-from-regexp regexp)))
 
 (provide 'org-super-clock-report)
 ;;; org-super-clock-report.el ends here
