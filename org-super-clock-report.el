@@ -48,11 +48,11 @@
     (org-super-clock-report--parse-ast
      ast
      (lambda (this-ast)
-       (let ((tmp-duration (and (eq (cl-first this-ast) 'headline)
+       (let ((tmp-duration (and (eq (cl-first this-ast) 'clock)
                                 (plist-get (cl-second this-ast) :duration))))
          (when tmp-duration
            (cl-incf total-duration (org-duration-to-minutes tmp-duration))))))
-    total-duration))
+    (floor total-duration)))
 
 (defun org-super-clock-report-from-regexp (regexp)
   "Create clock report from REGEXP."

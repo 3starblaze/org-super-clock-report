@@ -35,5 +35,12 @@
     (should (equal (plist-get (cl-second (cl-first asts)) :raw-value)
                    "Wait for render to finish"))))
 
+(ert-deftest org-super-clock-report-test-count-clock-duration ()
+  (let ((headline-ast (cl-first (org-super-clock-report--regexp-headlines
+                                 org-super-clock-report-test-ast
+                                 "render"))))
+    (should (eq (org-super-clock-report--count-clock-duration headline-ast)
+                197))))
+
 (provide 'test)
 ;;; test.el ends here
