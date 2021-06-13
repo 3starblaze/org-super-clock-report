@@ -16,6 +16,9 @@
 (require 'cl-lib)
 (require 'org-element)
 
+(defvar org-super-clock-report-buffer-name "*org-super-clock-report*"
+  "The name of the buffer where the clock report is shown.")
+
 (defun org-super-clock-report--get-ast (buffer-or-name)
   "Get AST of a buffer or its name BUFFER-OR-NAME."
   (with-current-buffer buffer-or-name
@@ -63,9 +66,9 @@
              (plist-get (cl-second this-ast) :raw-value)
              (org-super-clock-report--count-clock-duration this-ast))))
     ; Kill the bufffer so that we don't have to do the clean-up ourselves
-    (when (get-buffer "*org-super-clock-report*")
-      (kill-buffer "*org-super-clock-report*"))
-    (with-current-buffer (get-buffer-create "*org-super-clock-report*")
+    (when (get-buffer org-super-clock-report-buffer-name)
+      (kill-buffer org-super-clock-report-buffer-name))
+    (with-current-buffer (get-buffer-create org-super-clock-report-buffer-name)
       (org-mode)
       (insert "| Headline | Duration |\n")
       (insert "|-\n")
@@ -73,7 +76,7 @@
           ((not this-plist) nil)
         (insert "|" (cl-first this-plist)
                 "|" (number-to-string (cl-second this-plist)) "|\n"))
-      (switch-to-buffer "*org-super-clock-report*")
+      (switch-to-buffer org-super-clock-report-buffer-name)
       ; Use org's C-c C-c to have a properly aligned table.
       ; This is done at the second line because "|-" line needs to be C-c C-c
       ; specifically. It updates the whole table as well.
