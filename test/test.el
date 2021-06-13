@@ -39,8 +39,8 @@
   (let ((headline-ast (cl-first (org-super-clock-report--regexp-headlines
                                  org-super-clock-report-test-ast
                                  "render"))))
-    (should (eq (org-super-clock-report--count-clock-duration headline-ast)
-                197))))
+    (should (equal (org-super-clock-report--count-clock-duration headline-ast)
+                   "3:17"))))
 
 (provide 'test)
 ;;; test.el ends here

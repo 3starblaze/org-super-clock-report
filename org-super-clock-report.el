@@ -52,7 +52,7 @@
                                 (plist-get (cl-second this-ast) :duration))))
          (when tmp-duration
            (cl-incf total-duration (org-duration-to-minutes tmp-duration))))))
-    (floor total-duration)))
+    (org-duration-from-minutes total-duration)))
 
 (defun org-super-clock-report-from-regexp (regexp)
   "Create clock report from REGEXP."
@@ -77,7 +77,7 @@
       (cl-do ((this-plist headline-duration-plist (cddr this-plist)))
           ((not this-plist) nil)
         (insert "|" (cl-first this-plist)
-                "|" (number-to-string (cl-second this-plist)) "|\n"))
+                "|" (cl-second this-plist) "|\n"))
       (switch-to-buffer org-super-clock-report-buffer-name)
       ; Use org's C-c C-c to have a properly aligned table.
       ; This is done at the second line because "|-" line needs to be C-c C-c
