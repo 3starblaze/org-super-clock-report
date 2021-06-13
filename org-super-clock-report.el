@@ -56,6 +56,8 @@
 
 (defun org-super-clock-report-from-regexp (regexp)
   "Create clock report from REGEXP."
+  (unless (eq major-mode 'org-mode)
+    (error "Not in org-mode"))
   (let* ((ast (org-super-clock-report--get-ast (current-buffer)))
          (target-asts (org-super-clock-report--regexp-headlines ast regexp))
          (headline-duration-plist))
