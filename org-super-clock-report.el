@@ -57,16 +57,32 @@
          (target-asts (org-super-clock-report--regexp-headlines ast regexp))
          (headline-duration-plist))
     (dolist (this-ast target-asts)
-      (plist-put
-       headline-duration-plist
-       (plist-get (cl-second this-ast) :raw-value)
-       (org-super-clock-report--count-clock-duration this-ast)))
-    (with-output-to-temp-buffer "*org-super-clock-report*"
+      (setf headline-duration-plist
+            (plist-put
+             headline-duration-plist
+             (plist-get (cl-second this-ast) :raw-value)
+             (org-super-clock-report--count-clock-duration this-ast))))
+    ; Kill the bufffer so that we don't have to do the clean-up ourselves
+    (when (get-buffer "*org-super-clock-report*")
+      (kill-buffer "*org-super-clock-report*"))
+    (with-current-buffer (get-buffer-create "*org-super-clock-report*")
       (org-mode)
-      (print "| Headline | Duration |\n")
+      (insert "| Headline | Duration |\n")
+      (insert "|-\n")
       (cl-do ((this-plist headline-duration-plist (cddr this-plist)))
           ((not this-plist) nil)
-        (print (concat "|" (cl-first this-plist) "|" (cl-second this-plist) "|\n"))))))
+        (insert "|" (cl-first this-plist)
+                "|" (number-to-string (cl-second this-plist)) "|\n"))
+      (switch-to-buffer "*org-super-clock-report*")
+      ; Use org's C-c C-c to have a properly aligned table.
+      ; This is done at the second line because "|-" line needs to be C-c C-c
+      ; specifically. It updates the whole table as well.
+      (save-excursion
+        (goto-char (point-min))
+        (forward-line)
+        (org-ctrl-c-ctrl-c))
+      (read-only-mode)
+      )))
 
 (provide 'org-super-clock-report)
 ;;; org-super-clock-report.el ends here
