@@ -56,6 +56,8 @@
 
 (defun org-super-clock-report--query-from-regexp (regexp)
   "Collect clock report information given REGEXP meant for display."
+  (unless (eq major-mode 'org-mode)
+    (error "Not in org-mode"))
   (let* ((ast (org-super-clock-report--get-ast (current-buffer)))
          (target-asts (org-super-clock-report--regexp-headlines ast regexp))
          (headline-duration-plist))
@@ -69,8 +71,6 @@
 
 (defun org-super-clock-report--display (display-data-plist)
   "Create clock report from DISPLAY-DATA-PLIST."
-  (unless (eq major-mode 'org-mode)
-    (error "Not in org-mode"))
   ;; Kill the bufffer so that we don't have to do the clean-up ourselves
   (when (get-buffer org-super-clock-report-buffer-name)
     (kill-buffer org-super-clock-report-buffer-name))
