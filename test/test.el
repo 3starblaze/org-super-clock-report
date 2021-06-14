@@ -47,5 +47,11 @@
     (should (equal (org-super-clock-report--query-from-regexp "render")
                    '("Wait for render to finish" "3:17")))))
 
+(ert-deftest org-super-clock-report-query-from-headline-list ()
+  (with-current-buffer (find-file org-super-clock-report-test-org-file)
+    (should (equal
+             (org-super-clock-report--query-from-headline-list '("Make a puzzle"))
+             '("Make a puzzle" "6:16")))))
+
 (provide 'test)
 ;;; test.el ends here

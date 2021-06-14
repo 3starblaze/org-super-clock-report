@@ -26,7 +26,7 @@
 
 (defun org-super-clock-report--parse-ast (ast fun)
   "Apply FUN for every element in AST."
-    (when ast
+    (when (listp ast)
       (apply fun (list ast))
       (dolist (child (cddr ast))
         (org-super-clock-report--parse-ast child fun))))
@@ -69,6 +69,28 @@
              (org-super-clock-report--count-clock-duration this-ast))))
     headline-duration-plist))
 
+(defun org-super-clock-report--query-from-headline-list (headline-list)
+  "Collect clock report information give HEADLINE-LIST meant for display."
+  (unless (eq major-mode 'org-mode)
+    (error "Not in org-mode"))
+  (let ((ast (org-super-clock-report--get-ast (current-buffer)))
+        (target-asts)
+        (headline-duration-plist))
+    (org-super-clock-report--parse-ast
+     ast
+     (lambda (this-ast)
+       (when (and (eq (cl-first this-ast) 'headline)
+                  (cl-find (plist-get (cl-second this-ast) :raw-value) headline-list
+                           :test 'equal))
+         (setf target-asts (append target-asts (list this-ast))))))
+    (dolist (this-ast target-asts)
+      (setf headline-duration-plist
+            (plist-put
+             headline-duration-plist
+             (plist-get (cl-second this-ast) :raw-value)
+             (org-super-clock-report--count-clock-duration this-ast))))
+    headline-duration-plist))
+
 (defun org-super-clock-report--display (display-data-plist)
   "Create clock report from DISPLAY-DATA-PLIST."
   ;; Kill the bufffer so that we don't have to do the clean-up ourselves
@@ -96,6 +118,11 @@
   "Display clock-report table for headlines which match REGEXP."
   (org-super-clock-report--display
    (org-super-clock-report--query-from-regexp regexp)))
+
+(defun org-super-clock-report-from-headline-list (headline-list)
+  "Display clock-report table for headlines that are in HEADLINE-LIST."
+  (org-super-clock-report--display
+   (org-super-clock-report--query-from-headline-list headline-list)))
 
 (provide 'org-super-clock-report)
 ;;; org-super-clock-report.el ends here
