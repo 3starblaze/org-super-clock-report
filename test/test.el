@@ -27,31 +27,19 @@
          (cl-incf headline-counter))))
     (should (eq headline-counter 7))))
 
-(ert-deftest org-super-clock-report-test-regexp-headlines ()
-  (let ((asts (org-super-clock-report--regexp-headlines
-               org-super-clock-report-test-ast
-               "render")))
-    (should (eq (length asts) 1))
-    (should (equal (plist-get (cl-second (cl-first asts)) :raw-value)
-                   "Wait for render to finish"))))
-
-(ert-deftest org-super-clock-report-test-count-clock-duration ()
-  (let ((headline-ast (cl-first (org-super-clock-report--regexp-headlines
-                                 org-super-clock-report-test-ast
-                                 "render"))))
-    (should (equal (org-super-clock-report--count-clock-duration headline-ast)
-                   "3:17"))))
-
-(ert-deftest org-super-clock-report-query-from-regexp ()
+(ert-deftest org-super-clock-report-test-regexp-filter ()
   (with-current-buffer (find-file org-super-clock-report-test-org-file)
-    (should (equal (org-super-clock-report--query-from-regexp "render")
+    (should (equal (org-super-clock-report--query
+                    #'org-super-clock-report--regexp-filter
+                    "render")
                    '("Wait for render to finish" "3:17")))))
 
-(ert-deftest org-super-clock-report-query-from-headline-list ()
+(ert-deftest org-super-clock-report-test-headline-list-filter ()
   (with-current-buffer (find-file org-super-clock-report-test-org-file)
-    (should (equal
-             (org-super-clock-report--query-from-headline-list '("Make a puzzle"))
-             '("Make a puzzle" "6:16")))))
+    (should (equal (org-super-clock-report--query
+                    #'org-super-clock-report--headline-list-filter
+                    '("Make a puzzle"))
+                   '("Make a puzzle" "6:16")))))
 
 (provide 'test)
 ;;; test.el ends here
