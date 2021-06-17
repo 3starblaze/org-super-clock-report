@@ -31,17 +31,19 @@
       (dolist (child (cddr ast))
         (org-super-clock-report--parse-ast child fun))))
 
-(defun org-super-clock-report--regexp-filter (ast regexp)
-  "Verify that current AST will match REGEXP."
-  (and (eq (cl-first ast) 'headline)
-       (string-match-p regexp (plist-get (cl-second ast) :raw-value))))
+(defun org-super-clock-report--create-regexp-headline-filter (regexp)
+  "Return a headline filter that will match a REGEXP."
+  (lambda (ast)
+    (and (eq (cl-first ast) 'headline)
+         (string-match-p regexp (plist-get (cl-second ast) :raw-value)))))
 
-(defun org-super-clock-report--headline-list-filter (ast headline-list)
-  "Verify that current AST is included in HEADLINE-LIST."
-  (and (eq (cl-first ast) 'headline)
-       (cl-find (plist-get (cl-second ast) :raw-value)
-                headline-list
-                :test 'equal)))
+(defun org-super-clock-report--create-list-headline-filter (headline-list)
+  "Create a headline filter that will match a literal string in HEADLINE-LIST."
+  (lambda (ast)
+    (and (eq (cl-first ast) 'headline)
+         (cl-find (plist-get (cl-second ast) :raw-value)
+                  headline-list
+                  :test 'equal))))
 
 (defun org-super-clock-report--count-clock-duration (ast)
   "For every clock in AST count minutes."
@@ -55,11 +57,15 @@
            (cl-incf total-duration (org-duration-to-minutes tmp-duration))))))
     (org-duration-from-minutes total-duration)))
 
-(defun org-super-clock-report--query (predicate &rest args)
-  "Obtain display data given PREDICATE and ARGS for the predicate function.
+(defun org-super-clock-report--query (headline-filter)
+  "Obtain display data given HEADLINE-FILTER.
 
-PREDICATE is a function whose first argument is AST and which optionally accepts
-more arguments (ARGS)."
+HEADLINE-FILTER is a special function that accepts an ast and returns a truthy
+value if the the ast matches the requirements.
+
+Return display-data - a plist containing headlines as keys and durations as
+values - meant for display in a buffer (but is handy for verifying query
+results)."
   (unless (eq major-mode 'org-mode)
     (error "Not in org-mode"))
   (let ((ast (org-super-clock-report--get-ast (current-buffer)))
@@ -68,7 +74,7 @@ more arguments (ARGS)."
     (org-super-clock-report--parse-ast
      ast
      (lambda (this-ast)
-       (when (apply predicate this-ast args)
+       (when (funcall headline-filter this-ast)
          (setf target-asts (append target-asts (list this-ast))))))
     (dolist (this-ast target-asts)
       (setf headline-duration-plist
@@ -105,15 +111,13 @@ more arguments (ARGS)."
   "Display clock-report table for headlines which match REGEXP."
   (org-super-clock-report--display
    (org-super-clock-report--query
-    #'org-super-clock-report--regexp-filter
-    regexp)))
+    (org-super-clock-report--create-regexp-headline-filter regexp))))
 
 (defun org-super-clock-report-from-headline-list (headline-list)
   "Display clock-report table for headlines that are in HEADLINE-LIST."
   (org-super-clock-report--display
    (org-super-clock-report--query
-    #'org-super-clock-report--headline-list-filter
-    headline-list)))
+    (org-super-clock-report--create-list-headline-filter headline-list))))
 
 (provide 'org-super-clock-report)
 ;;; org-super-clock-report.el ends here

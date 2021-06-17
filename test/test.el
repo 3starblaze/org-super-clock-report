@@ -30,15 +30,15 @@
 (ert-deftest org-super-clock-report-test-regexp-filter ()
   (with-current-buffer (find-file org-super-clock-report-test-org-file)
     (should (equal (org-super-clock-report--query
-                    #'org-super-clock-report--regexp-filter
-                    "render")
+                    (org-super-clock-report--create-regexp-headline-filter
+                     "render"))
                    '("Wait for render to finish" "3:17")))))
 
 (ert-deftest org-super-clock-report-test-headline-list-filter ()
   (with-current-buffer (find-file org-super-clock-report-test-org-file)
     (should (equal (org-super-clock-report--query
-                    #'org-super-clock-report--headline-list-filter
-                    '("Make a puzzle"))
+                    (org-super-clock-report--create-list-headline-filter
+                     '("Make a puzzle")))
                    '("Make a puzzle" "6:16")))))
 
 (provide 'test)
