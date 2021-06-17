@@ -41,5 +41,14 @@
                      '("Make a puzzle")))
                    '("Make a puzzle" "6:16")))))
 
+(ert-deftest org-super-clock-report-test-from-timestamp-clock-filter ()
+  (with-current-buffer (find-file org-super-clock-report-test-org-file)
+    (should (equal (org-super-clock-report--query
+                    (org-super-clock-report--create-regexp-headline-filter
+                     "busy")
+                    (org-super-clock-report--create-from-timestamp-clock-filter
+                     "[2021-05-10]"))
+                   '("Pretend to be busy" "2:29")))))
+
 (provide 'test)
 ;;; test.el ends here

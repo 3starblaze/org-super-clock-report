@@ -45,22 +45,49 @@
                   headline-list
                   :test 'equal))))
 
-(defun org-super-clock-report--count-clock-duration (ast)
-  "For every clock in AST count minutes."
-  (let ((total-duration 0))
+(defun org-super-clock-report--create-from-timestamp-clock-filter (timestamp)
+  "Verify that current AST is a clock which has started at TIMESTAMP."
+  (lambda (ast)
+    (and (eq (cl-first ast) 'clock)
+         (let ((expected-timestamp-object
+                (cl-second (org-timestamp-from-string timestamp)))
+               (actual-timestamp-object
+                (cl-second (plist-get (cl-second ast) :value))))
+           (cl-reduce
+            ;; AND is a macro and can't be passed directly, thus the lambda
+            (lambda (a b) (and a b))
+            (append
+             (cl-mapcar
+             (lambda (prop)
+                (>=
+                 (plist-get actual-timestamp-object prop)
+                 (plist-get expected-timestamp-object prop)))
+              '(:year-start :month-start :day-start))
+             (cl-mapcar
+              (lambda (prop)
+                (>=
+                 (or (plist-get actual-timestamp-object prop) 0)
+                 (or (plist-get expected-timestamp-object prop) 0)))
+              '(:hour-start :minute-start :second-start))))))))
+
+(defun org-super-clock-report--count-clock-duration (ast &optional clock-filter)
+  "Count duration in AST clocks, optionally filtering with CLOCK-FILTER."
+  (let ((total-duration 0)
+        (filter (or clock-filter
+                    (lambda (this-ast) (eq (cl-first this-ast) 'clock)))))
     (org-super-clock-report--parse-ast
      ast
      (lambda (this-ast)
-       (let ((tmp-duration (and (eq (cl-first this-ast) 'clock)
+       (let ((tmp-duration (and (funcall filter this-ast)
                                 (plist-get (cl-second this-ast) :duration))))
          (when tmp-duration
            (cl-incf total-duration (org-duration-to-minutes tmp-duration))))))
     (org-duration-from-minutes total-duration)))
 
-(defun org-super-clock-report--query (headline-filter)
-  "Obtain display data given HEADLINE-FILTER.
+(defun org-super-clock-report--query (headline-filter &optional clock-filter)
+  "Obtain display data given HEADLINE-FILTER and CLOCK-FILTER.
 
-HEADLINE-FILTER is a special function that accepts an ast and returns a truthy
+Filter functions are special functions that accept an ast and return a truthy
 value if the the ast matches the requirements.
 
 Return display-data - a plist containing headlines as keys and durations as
@@ -81,7 +108,8 @@ results)."
             (plist-put
              headline-duration-plist
              (plist-get (cl-second this-ast) :raw-value)
-             (org-super-clock-report--count-clock-duration this-ast))))
+             (org-super-clock-report--count-clock-duration
+              this-ast clock-filter))))
     headline-duration-plist))
 
 (defun org-super-clock-report--display (display-data-plist)
