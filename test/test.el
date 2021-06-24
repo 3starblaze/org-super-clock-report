@@ -39,6 +39,23 @@
          (cl-incf headline-counter))))
     (should (eq headline-counter 7))))
 
+(ert-deftest org-super-clock-report--display-data-p ()
+  (cl-macrolet ((should-be
+                 (data expected)
+                 `(should (equal
+                           (org-super-clock-report--display-data-p ,data) ,expected)))
+                (should-t (data) `(should-be ,data t))
+                (should-nil (data) `(should-be ,data nil)))
+    (should-nil 3)
+    (should-t '())
+    (should-nil '("foo"))
+    (should-nil '("foo" "bar"))
+    (should-t '("foo" "4:20"))
+    (should-nil '("foo" "4:20" "bar"))
+    (should-nil '("foo" "4:20" "bar" "baz"))
+    (should-t '("foo" "4:20" "boo" "1d 3:20"))))
+
+
 (ert-deftest org-super-clock-report-test-regexp-filter ()
   (org-super-clock-report-test--with-org-file-as-current-buffer
    (should (equal (org-super-clock-report--query

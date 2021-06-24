@@ -31,6 +31,16 @@
       (dolist (child (cddr ast))
         (org-super-clock-report--parse-ast child fun))))
 
+(defun org-super-clock-report--display-data-p (data)
+  "Verify that DATA is display-data."
+  (and (listp data)
+       (= (% (length data) 2) 0)
+       (cl-do ((this-list data (cddr this-list)))
+           ((or (not this-list)
+                (not (stringp (cl-first this-list)))
+                (not (org-duration-p (cl-second this-list))))
+            (not this-list)))))
+
 (defun org-super-clock-report--create-regexp-headline-filter (regexp)
   "Return a headline filter that will match a REGEXP."
   (lambda (ast)
@@ -114,6 +124,9 @@ results)."
 
 (defun org-super-clock-report--display (display-data-plist)
   "Create clock report from DISPLAY-DATA-PLIST."
+  (unless (org-super-clock-report--display-data-p display-data-plist)
+    (signal 'wrong-type-argument
+            `(org-super-clock-report--display-data-p ,display-data-plist)))
   ;; Kill the bufffer so that we don't have to do the clean-up ourselves
   (when (get-buffer org-super-clock-report-buffer-name)
     (kill-buffer org-super-clock-report-buffer-name))
