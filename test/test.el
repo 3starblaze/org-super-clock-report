@@ -9,6 +9,12 @@
 (defvar org-super-clock-report-test-org-file "test.org"
   "Org mode file used for testing org-super-clock-report features.")
 
+(defvar org-super-clock-report-test-org-buffer
+  (find-file (expand-file-name
+              org-super-clock-report-test-org-file
+              (file-name-directory buffer-file-name)))
+  "`org-super-clock-report-test-org-file' but in a buffer.")
+
 (defvar org-super-clock-report-test-ast
   (org-super-clock-report--get-ast org-super-clock-report-test-org-file)
   "The AST representation of `org-super-clock-report-test-org-file'.")
@@ -16,10 +22,7 @@
 (defmacro org-super-clock-report-test--with-org-file-as-current-buffer
     (&rest body)
   "Use `org-super-clock-report-test-org-file' and feed BODY to `with-current-buffer'."
-  `(with-current-buffer
-       (find-file (expand-file-name
-                   org-super-clock-report-test-org-file
-                   (file-name-directory buffer-file-name)))
+  `(with-current-buffer org-super-clock-report-test-org-buffer
      ,@body))
 
 (ert-deftest org-super-clock-report-test-get-ast ()
