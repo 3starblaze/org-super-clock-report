@@ -14,6 +14,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'dash)
 (require 'org-element)
 
 (defvar org-super-clock-report-buffer-name "*org-super-clock-report*"
@@ -40,6 +41,27 @@
                 (not (stringp (cl-first this-list)))
                 (not (org-duration-p (cl-second this-list))))
             (not this-list)))))
+
+(defun org-super-clock-report--grouped-display-data-p (data)
+  "Verify that DATA is grouped display-data.
+
+Grouped display-data is similar to normal data but instead is a 2d plist with
+key being a headline and value - a plist with a key of a group and value of a
+duration."
+  (and (listp data)
+       (= (% (length data) 2) 0)
+       (cl-do ((this-list data (cddr this-list)))
+           ((or (not this-list)
+                (not (stringp (cl-first this-list)))
+                (not (org-super-clock-report--display-data-p
+                      (cl-second this-list))))
+            (not this-list)))
+       (or (eq nil data)
+           (cl-do ((this-list (-slice data 1 nil 2) (cdr this-list)))
+               ((or (= (length this-list) 1)
+                    (not (equal (-slice (cl-first this-list) 0 nil 2)
+                                (-slice (cl-second this-list) 0 nil 2))))
+                (= (length this-list) 1))))))
 
 (defun org-super-clock-report--create-regexp-headline-filter (regexp)
   "Return a headline filter that will match a REGEXP."
