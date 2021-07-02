@@ -15,6 +15,7 @@
 
 (require 'cl-lib)
 (require 'dash)
+(require 'ht)
 (require 'org-element)
 
 (defvar org-super-clock-report-buffer-name "*org-super-clock-report*"
@@ -102,6 +103,30 @@ duration."
                  (or (plist-get expected-timestamp-object prop) 0)))
               '(:hour-start :minute-start :second-start))))))))
 
+(defun org-super-clock-report--daily-clock-grouper (clock-ast)
+  "Given clock data CLOCK-AST create a daily group."
+  (let ((timestamp-data (cl-second (plist-get (cl-second clock-ast) :value))))
+    ;; org-timestamp-format seems to be broken so it's done manually
+    ;; TODO Handle padding month and day 2021-04-02 not 2021-4-2
+    (format "%s-%s-%s"
+            (plist-get timestamp-data :year-start)
+            (plist-get timestamp-data :month-start)
+            (plist-get timestamp-data :day-start))))
+
+(defun org-super-clock-report--grouper (ast group-filter)
+  "Group AST clock entries with GROUP-FILTER."
+  (let ((groups (ht-create)))
+    (org-super-clock-report--parse-ast
+     ast
+     (lambda (this-ast)
+       (when (eq (cl-first this-ast) 'clock)
+         (let ((group (funcall group-filter this-ast)))
+           (ht-set! groups group
+                    (push this-ast (ht-get groups group)))))))
+
+    ;; Reverse the plist order
+    (ht->plist (ht-from-alist (reverse (ht->alist groups))))))
+
 (defun org-super-clock-report--count-clock-duration (ast &optional clock-filter)
   "Count duration in AST clocks, optionally filtering with CLOCK-FILTER."
   (let ((total-duration 0)
@@ -115,6 +140,32 @@ duration."
          (when tmp-duration
            (cl-incf total-duration (org-duration-to-minutes tmp-duration))))))
     (org-duration-from-minutes total-duration)))
+
+(defun org-super-clock-report--count-group-clock-duration (clock-data)
+  "Given CLOCK-DATA count duration according to group.
+
+CLOCK-DATA is a plist with group as a key and ast list as a value."
+  (let ((display-data))
+    (dolist (key (-slice clock-data 0 nil 2))
+      (dolist (this-ast (plist-get clock-data key))
+        (plist-put
+         display-data
+         key
+         (+ (or (plist-get display-data key) 0)
+            (plist-get (cl-second this-ast) :duration)))))
+    display-data))
+
+(defun org-super-clock-report--filter-ast (ast filter)
+  "Recursively traverse AST and return a list to all asts that satisfy FILTER.
+
+FILTER is a predicate that accepts an AST."
+  (let ((ast-list))
+    (org-super-clock-report--parse-ast
+     ast
+     (lambda (this-ast)
+       (when (funcall filter this-ast)
+         (setf ast-list (push this-ast ast-list)))))
+    ast-list))
 
 (defun org-super-clock-report--query (headline-filter &optional clock-filter)
   "Obtain display data given HEADLINE-FILTER and CLOCK-FILTER.

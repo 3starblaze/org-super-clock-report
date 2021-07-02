@@ -127,5 +127,28 @@
                     "[2021-05-10]"))
                   '("Pretend to be busy" "2:29")))))
 
+(ert-deftest org-super-clock-report-test-filter-ast ()
+  (should (eq (length (org-super-clock-report--filter-ast
+                       (org-super-clock-report--get-ast org-super-clock-report-test-org-buffer)
+                       (org-super-clock-report--create-regexp-headline-filter
+                        "busy")))
+              1)))
+
+(ert-deftest org-super-clock-report-test-daily-clock-grouper ()
+  (let ((ast-list
+         (cl-first (cl-mapcar
+          (lambda (ast)
+            (org-super-clock-report--grouper ast #'org-super-clock-report--daily-clock-grouper))
+          (org-super-clock-report--filter-ast
+           (org-super-clock-report--get-ast org-super-clock-report-test-org-buffer)
+           (org-super-clock-report--create-list-headline-filter
+            '("Wait for render to finish")))))))
+
+    (should (eq (length ast-list) 12)) ;; 6x2 because of plist
+    (should (equal (cl-mapcar (lambda (x) (length x)) (-slice ast-list 1 nil 2))
+                   '(4 3 2 2 1 2)))
+    (cl-mapcar (lambda ())
+               (-slice ast-list 1 nil 2))))
+
 (provide 'test)
 ;;; test.el ends here
