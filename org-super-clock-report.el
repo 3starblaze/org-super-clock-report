@@ -207,10 +207,8 @@ results)."
     (org-mode)
     (insert "| Headline | Duration |\n")
     (insert "|-\n")
-    (cl-do ((this-plist display-data-plist (cddr this-plist)))
-        ((not this-plist) nil)
-      (insert "|" (cl-first this-plist)
-              "|" (cl-second this-plist) "|\n"))
+    (ht-map (lambda (k v) (insert "|" k "|" v "|\n"))
+     (ht-from-plist display-data-plist))
     (switch-to-buffer org-super-clock-report-buffer-name)
     ;; Use org's C-c C-c to have a properly aligned table.
     ;; This is done at the second line because "|-" line needs to be C-c C-c
