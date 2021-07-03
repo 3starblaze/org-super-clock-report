@@ -35,13 +35,17 @@
 
 (defun org-super-clock-report--display-data-p (data)
   "Verify that DATA is display-data."
-  (and (listp data)
-       (= (% (length data) 2) 0)
-       (cl-do ((this-list data (cddr this-list)))
-           ((or (not this-list)
-                (not (stringp (cl-first this-list)))
-                (not (org-duration-p (cl-second this-list))))
-            (not this-list)))))
+  (or (eq data nil)
+      (and (listp data)
+           (= (% (length data) 2) 0)
+           (ht-p (ht-from-plist data))
+           (cl-reduce (lambda (a b) (and a b))
+                      (ht-map (lambda (k v)
+                                (and
+                                 (stringp k)
+                                 ;; To prevent returning 0
+                                 (when (org-duration-p v) t)))
+                              (ht-from-plist data))))))
 
 (defun org-super-clock-report--grouped-display-data-p (data)
   "Verify that DATA is grouped display-data.
