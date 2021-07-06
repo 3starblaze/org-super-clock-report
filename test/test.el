@@ -135,20 +135,21 @@
               1)))
 
 (ert-deftest org-super-clock-report-test-daily-clock-grouper ()
-  (let ((ast-list
-         (cl-first (cl-mapcar
-          (lambda (ast)
-            (org-super-clock-report--grouper
-             ast
-             #'org-super-clock-report--daily-clock-grouper))
-          (org-super-clock-report--filter-ast
-           (org-super-clock-report--get-ast org-super-clock-report-test-org-buffer)
-           (org-super-clock-report--create-list-headline-filter
-            '("Wait for render to finish")))))))
+  (let ((ast-ht
+         (ht-from-plist
+          (cl-first
+           (cl-mapcar
+            (lambda (ast)
+              (org-super-clock-report--grouper
+               ast
+               #'org-super-clock-report--daily-clock-grouper))
+            (org-super-clock-report--filter-ast
+             (org-super-clock-report--get-ast org-super-clock-report-test-org-buffer)
+             (org-super-clock-report--create-list-headline-filter
+              '("Wait for render to finish"))))))))
 
-    (should (eq (length ast-list) 12)) ;; 6x2 because of plist
-    (should (equal (cl-mapcar (lambda (x) (length x)) (-slice ast-list 1 nil 2))
-                   '(4 3 2 2 1 2)))))
+    (should (eq (length (ht-values ast-ht)) 6))
+    (should (equal (mapcar #'length (ht-values ast-ht)) '(4 3 2 2 1 2)))))
 
 (provide 'test)
 ;;; test.el ends here
