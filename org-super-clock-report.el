@@ -131,19 +131,16 @@ duration."
     ;; Reverse the plist order
     (ht->plist (ht-from-alist (reverse (ht->alist groups))))))
 
-(defun org-super-clock-report--count-clock-duration (ast &optional clock-filter)
-  "Count duration in AST clocks, optionally filtering with CLOCK-FILTER."
-  (let ((total-duration 0)
-        (filter (or clock-filter
-                    (lambda (this-ast) (eq (cl-first this-ast) 'clock)))))
-    (org-super-clock-report--parse-ast
-     ast
-     (lambda (this-ast)
-       (let ((tmp-duration (and (funcall filter this-ast)
-                                (plist-get (cl-second this-ast) :duration))))
-         (when tmp-duration
-           (cl-incf total-duration (org-duration-to-minutes tmp-duration))))))
-    (org-duration-from-minutes total-duration)))
+(defun org-super-clock-report--count-clock-duration (ast-list)
+  "Count toget all duration for each clock ast from AST-LIST."
+  (org-duration-from-minutes
+   (cl-reduce
+    #'+
+    (cl-mapcar (lambda (ast)
+                 (and (eq (cl-first ast) 'clock)
+                      (org-duration-to-minutes
+                       (plist-get (cl-second ast) :duration))))
+               ast-list))))
 
 (defun org-super-clock-report--count-group-clock-duration (clock-data)
   "Given CLOCK-DATA count duration according to group.
@@ -196,7 +193,10 @@ results)."
              headline-duration-plist
              (plist-get (cl-second this-ast) :raw-value)
              (org-super-clock-report--count-clock-duration
-              this-ast clock-filter))))
+              (org-super-clock-report--filter-ast
+               this-ast
+               (or clock-filter
+                   (lambda (this-ast) (eq (cl-first this-ast) 'clock))))))))
     headline-duration-plist))
 
 (defun org-super-clock-report--display (display-data-plist)
