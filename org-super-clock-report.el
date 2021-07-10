@@ -199,6 +199,35 @@ results)."
                    (lambda (this-ast) (eq (cl-first this-ast) 'clock))))))))
     headline-duration-plist))
 
+(defun org-super-clock-report--query-grouped
+    (headline-filter _clock-filter group-filter)
+  "Query current buffer by group.
+
+HEADLINE-FILTER and CLOCK-FILTER acts just like `org-super-clock-report--query'.
+GROUP-FILTER generates a group name for a clock entry which is then used to sort
+clock reports by group.
+
+TODO Actually use CLOCK-FILTER."
+  (unless (eq major-mode 'org-mode)
+    (error "Not in org-mode"))
+  (let* ((ast (org-super-clock-report--get-ast (current-buffer)))
+         (headline-asts (org-super-clock-report--filter-ast ast headline-filter))
+         (result-ht (ht-create)))
+    (dolist (this-headline-ast headline-asts)
+      (ht-set! result-ht
+               (plist-get (cl-second this-headline-ast) :raw-value)
+               (let ((group-duration-ht
+                      (ht-from-plist
+                       (org-super-clock-report--grouper
+                        this-headline-ast group-filter))))
+                 (ht-map
+                  (lambda (group ast-list)
+                    (ht-set! group-duration-ht group
+                             (org-super-clock-report--count-clock-duration ast-list)))
+                  group-duration-ht)
+                 group-duration-ht)))
+    result-ht))
+
 (defun org-super-clock-report--display (display-data-plist)
   "Create clock report from DISPLAY-DATA-PLIST."
   (unless (org-super-clock-report--display-data-p display-data-plist)
@@ -223,11 +252,51 @@ results)."
       (org-ctrl-c-ctrl-c))
     (read-only-mode)))
 
+(defun org-super-clock-report--display-grouped (display-ht)
+  "Use DISPLAY-HT to show grouped clock report."
+  (when (get-buffer org-super-clock-report-buffer-name)
+    (kill-buffer org-super-clock-report-buffer-name))
+  (with-current-buffer (get-buffer-create org-super-clock-report-buffer-name)
+    (org-mode)
+    (insert "Grouped clock-report\n\n")
+    (switch-to-buffer org-super-clock-report-buffer-name)
+    (ht-map (lambda (headline groups)
+              (insert "* " headline "\n")
+              (insert "| Group | Duration |\n")
+              (insert "|-\n")
+              (ht-map (lambda (group duration)
+                        (insert "|" group "|" duration "|\n"))
+                      groups))
+            display-ht)
+
+    ;; Table updating procedure
+    ;; TODO If heading is at `point-min' it's ignored and the table is not
+    ;; updated. Handle that better.
+    (goto-char (point-min))
+    (condition-case nil
+        (while t
+          (org-next-visible-heading 1)
+          (forward-line 2)
+          (org-ctrl-c-ctrl-c))
+      (user-error nil))
+
+    (goto-char (point-min))
+    (read-only-mode)
+    (switch-to-buffer org-super-clock-report-buffer-name)))
+
 (defun org-super-clock-report-from-regexp (regexp)
   "Display clock-report table for headlines which match REGEXP."
   (org-super-clock-report--display
    (org-super-clock-report--query
     (org-super-clock-report--create-regexp-headline-filter regexp))))
+
+(defun org-super-clock-report-from-regexp-grouped (regexp grouper)
+  "Display clock-report table for headlines which match REGEXP, grouped by GROUPER."
+  (org-super-clock-report--display-grouped
+   (org-super-clock-report--query-grouped
+    (org-super-clock-report--create-regexp-headline-filter regexp)
+    nil
+    grouper)))
 
 (defun org-super-clock-report-from-headline-list (headline-list)
   "Display clock-report table for headlines that are in HEADLINE-LIST."
