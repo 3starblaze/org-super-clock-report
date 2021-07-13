@@ -151,5 +151,18 @@
     (should (eq (length (ht-values ast-ht)) 6))
     (should (equal (mapcar #'length (ht-values ast-ht)) '(4 3 2 2 1 2)))))
 
+(ert-deftest org-super-clock-report-test--query-grouped ()
+  (org-super-clock-report-test--with-org-file-as-current-buffer
+   (should (ht-equal-p
+            (org-super-clock-report--query-grouped
+             (org-super-clock-report--create-regexp-headline-filter "Make a puzzle")
+             nil
+             #'org-super-clock-report--daily-clock-grouper)
+            (ht ("Make a puzzle"
+                 (ht ("2021-05-23" "3:15")
+                     ("2021-04-28" "1:04")
+                     ("2021-01-11" "0:56")
+                     ("2021-01-09" "1:01"))))))))
+
 (provide 'test)
 ;;; test.el ends here

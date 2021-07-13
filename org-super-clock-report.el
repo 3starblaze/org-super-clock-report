@@ -18,6 +18,23 @@
 (require 'ht)
 (require 'org-element)
 
+;; This shim makes nested ht comparable
+(defun ht-equal? (table1 table2)
+  "Return t if TABLE1 and TABLE2 have the same keys and values.
+Does not compare equality predicates."
+  (declare (side-effect-free t))
+  (let ((keys1 (ht-keys table1))
+        (keys2 (ht-keys table2))
+        (sentinel (make-symbol "ht-sentinel")))
+    (and (equal (length keys1) (length keys2))
+         (--all?
+          (if (ht-p (ht-get table1 it))
+              (ht-equal-p (ht-get table1 it)
+                          (ht-get table2 it))
+            (equal (ht-get table1 it)
+                 (ht-get table2 it sentinel)))
+          keys1))))
+
 (defvar org-super-clock-report-buffer-name "*org-super-clock-report*"
   "The name of the buffer where the clock report is shown.")
 
@@ -111,8 +128,7 @@ duration."
   "Given clock data CLOCK-AST create a daily group."
   (let ((timestamp-data (cl-second (plist-get (cl-second clock-ast) :value))))
     ;; org-timestamp-format seems to be broken so it's done manually
-    ;; TODO Handle padding month and day 2021-04-02 not 2021-4-2
-    (format "%s-%s-%s"
+    (format "%04d-%02d-%02d"
             (plist-get timestamp-data :year-start)
             (plist-get timestamp-data :month-start)
             (plist-get timestamp-data :day-start))))
