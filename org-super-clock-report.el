@@ -320,5 +320,40 @@ TODO Actually use CLOCK-FILTER."
    (org-super-clock-report--query
     (org-super-clock-report--create-list-headline-filter headline-list))))
 
+(defun org-super-clock-report ()
+  "Open buffer for org-super-clock-report creation."
+  (interactive)
+  (when (get-buffer org-super-clock-report-buffer-name)
+    (kill-buffer org-super-clock-report-buffer-name))
+  (with-current-buffer (get-buffer-create org-super-clock-report-buffer-name)
+    (let ((headline-filters
+           (ht ("Regexp" #'org-super-clock-report--create-regexp-headline-filter)
+               ("List" #'org-super-clock-report--create-list-headline-filter)))
+          (clock-filters
+           (ht ("From timestamp" #'org-super-clock-report--create-from-timestamp-clock-filter)))
+          (clock-groupers
+           (ht ("Daily" #'org-super-clock-report--daily-clock-grouper)))
+          (insert-names (lambda (table)
+                          (ht-map
+                           (lambda (name _v) (insert name "\n"))
+                           table))))
+      (insert "* Headline Filters\n")
+      (funcall insert-names headline-filters)
+      (insert "* Clock filters\n")
+      (funcall insert-names clock-filters)
+      (insert "* Clock groupers\n")
+      (funcall insert-names clock-groupers))
+
+    (org-mode)
+    (read-only-mode)
+    (switch-to-buffer org-super-clock-report-buffer-name)
+    (org-show-all)
+    (use-local-map (copy-keymap org-mode-map))
+
+    (local-set-key "q" (lambda () (interactive)
+                         (kill-buffer org-super-clock-report-buffer-name)))
+    (local-set-key "p" #'previous-line)
+    (local-set-key "n" #'next-line)))
+
 (provide 'org-super-clock-report)
 ;;; org-super-clock-report.el ends here
