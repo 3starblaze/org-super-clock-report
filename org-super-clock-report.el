@@ -320,33 +320,73 @@ TODO Actually use CLOCK-FILTER."
    (org-super-clock-report--query
     (org-super-clock-report--create-list-headline-filter headline-list))))
 
+(defvar org-super-clock-report-headline-filters
+  (ht ("Regexp" #'org-super-clock-report--create-regexp-headline-filter)
+      ("List" #'org-super-clock-report--create-list-headline-filter)))
+(defvar org-super-clock-report-clock-filters
+  (ht ("From timestamp" #'org-super-clock-report--create-from-timestamp-clock-filter)))
+(defvar org-super-clock-report-clock-groupers
+  (ht ("Daily" #'org-super-clock-report--daily-clock-grouper)))
+
+(defvar org-super-clock-report-current-headline-filter
+  (cl-first (ht-keys org-super-clock-report-headline-filters))
+  "String key of a headline filter defined in `org-super-clock-report-headline-filters'.")
+(defvar org-super-clock-report-current-clock-filter
+  (cl-first (ht-keys org-super-clock-report-clock-filters))
+  "String key of a clock filter defined in `org-super-clock-report-clock-filters'.")
+(defvar org-super-clock-report-current-clock-grouper
+  (cl-first (ht-keys org-super-clock-report-clock-groupers))
+  "String key of a clock grouped defined in `org-super-clock-report-clock-groupers'.")
+
+
 (defun org-super-clock-report ()
   "Open buffer for org-super-clock-report creation."
   (interactive)
   (when (get-buffer org-super-clock-report-buffer-name)
     (kill-buffer org-super-clock-report-buffer-name))
   (with-current-buffer (get-buffer-create org-super-clock-report-buffer-name)
-    (let ((headline-filters
-           (ht ("Regexp" #'org-super-clock-report--create-regexp-headline-filter)
-               ("List" #'org-super-clock-report--create-list-headline-filter)))
-          (clock-filters
-           (ht ("From timestamp" #'org-super-clock-report--create-from-timestamp-clock-filter)))
-          (clock-groupers
-           (ht ("Daily" #'org-super-clock-report--daily-clock-grouper)))
-          (insert-names (lambda (table)
-                          (ht-map
-                           (lambda (name _v) (insert name "\n"))
-                           table))))
-      (insert "* Headline Filters\n")
-      (funcall insert-names headline-filters)
-      (insert "* Clock filters\n")
-      (funcall insert-names clock-filters)
-      (insert "* Clock groupers\n")
-      (funcall insert-names clock-groupers))
-
     (org-mode)
-    (read-only-mode)
     (switch-to-buffer org-super-clock-report-buffer-name)
+    (let ((definitions
+            (ht ("hf" '("Headline filter"
+                        org-super-clock-report-headline-filters
+                        org-super-clock-report-current-headline-filter))
+                ("cf" '("Clock filter"
+                        org-super-clock-report-clock-filters
+                        org-super-clock-report-current-clock-filter))
+                ("cg" '("Clock grouper"
+                        org-super-clock-report-clock-groupers
+                        org-super-clock-report-current-clock-grouper))))
+          (btn-lambdas (ht-create)))
+
+      (ht-map
+       (lambda (key val)
+         (ht-set! btn-lambdas key
+                  (lambda ()
+                    (insert-button
+                     (cl-first val)
+                     'action (lambda (_button)
+                               (set
+                                (cl-third val)
+                                (completing-read
+                                 "> "
+                                 (ht-keys (symbol-value (cl-second val)))))
+                               ;; Refresh buffer
+                               (org-super-clock-report))))))
+       definitions)
+
+      (cl-flet ((btn (button-id) (funcall (ht-get btn-lambdas button-id))))
+        (btn "hf")
+        (insert (format " %s\n"
+                        org-super-clock-report-current-headline-filter))
+        (btn "cf")
+        (insert (format " %s\n"
+                        org-super-clock-report-current-clock-filter))
+        (btn "cg")
+        (insert (format " %s\n"
+                        org-super-clock-report-current-clock-grouper))))
+
+    (read-only-mode)
     (org-show-all)
     (use-local-map (copy-keymap org-mode-map))
 
