@@ -124,6 +124,18 @@ duration."
                  (or (plist-get expected-timestamp-object prop) 0)))
               '(:hour-start :minute-start :second-start))))))))
 
+(defun org-super-clock-report--today-clock-filter (ast)
+  "Clock filter that takes all AST that are made today."
+  (funcall (org-super-clock-report--create-from-timestamp-clock-filter
+            (format-time-string "[%Y-%m-%d]"))
+           ast))
+
+(defun org-super-clock-report--this-month-clock-filter (ast)
+  "Clock filter that takes all AST that are made this month."
+  (funcall (org-super-clock-report--create-from-timestamp-clock-filter
+            (format-time-string "[%Y-%m-01]"))
+           ast))
+
 (defun org-super-clock-report--daily-clock-grouper (clock-ast)
   "Given clock data CLOCK-AST create a daily group."
   (let ((timestamp-data (cl-second (plist-get (cl-second clock-ast) :value))))
@@ -324,7 +336,8 @@ TODO Actually use CLOCK-FILTER."
   (ht ("Regexp" #'org-super-clock-report--create-regexp-headline-filter)
       ("List" #'org-super-clock-report--create-list-headline-filter)))
 (defvar org-super-clock-report-clock-filters
-  (ht ("From timestamp" #'org-super-clock-report--create-from-timestamp-clock-filter)))
+  (ht ("Today" #'org-super-clock-report--today-clock-filter)
+      ("This month" #'org-super-clock-report--this-month-clock-filter)))
 (defvar org-super-clock-report-clock-groupers
   (ht ("Daily" #'org-super-clock-report--daily-clock-grouper)))
 
