@@ -343,11 +343,19 @@ Possible options defined in `org-super-clock-report-clock-groupers'.")
 (defun org-super-clock-report-from-regexp (regexp)
   "Display clock-report table for headlines which match REGEXP."
   (interactive "MRegexp: ")
-  (org-super-clock-report--display
-   (org-super-clock-report--query
-    (org-super-clock-report--create-regexp-headline-filter regexp)
-    (ht-get org-super-clock-report-clock-filters
-            org-super-clock-report-current-clock-filter))))
+  (if (equal org-super-clock-report-current-clock-grouper "nil")
+      (org-super-clock-report--display
+       (org-super-clock-report--query
+        (org-super-clock-report--create-regexp-headline-filter regexp)
+        (ht-get org-super-clock-report-clock-filters
+              org-super-clock-report-current-clock-filter)))
+    (org-super-clock-report--display-grouped
+     (org-super-clock-report--query-grouped
+      (org-super-clock-report--create-regexp-headline-filter regexp)
+      (ht-get org-super-clock-report-clock-filters
+              org-super-clock-report-current-clock-filter)
+      (ht-get org-super-clock-report-clock-groupers
+              org-super-clock-report-current-clock-grouper)))))
 
 (defun org-super-clock-report ()
   "Open buffer for org-super-clock-report creation."
