@@ -312,20 +312,6 @@ TODO Actually use CLOCK-FILTER."
     (read-only-mode)
     (switch-to-buffer org-super-clock-report-buffer-name)))
 
-(defun org-super-clock-report-from-regexp-grouped (regexp grouper)
-  "Display clock-report table for headlines which match REGEXP, grouped by GROUPER."
-  (org-super-clock-report--display-grouped
-   (org-super-clock-report--query-grouped
-    (org-super-clock-report--create-regexp-headline-filter regexp)
-    nil
-    grouper)))
-
-(defun org-super-clock-report-from-headline-list (headline-list)
-  "Display clock-report table for headlines that are in HEADLINE-LIST."
-  (org-super-clock-report--display
-   (org-super-clock-report--query
-    (org-super-clock-report--create-list-headline-filter headline-list))))
-
 (defvar org-super-clock-report-headline-filters
   (ht ("Regexp" #'org-super-clock-report--create-regexp-headline-filter)
       ("List" #'org-super-clock-report--create-list-headline-filter)))
