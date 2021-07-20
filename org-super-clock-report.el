@@ -312,12 +312,6 @@ TODO Actually use CLOCK-FILTER."
     (read-only-mode)
     (switch-to-buffer org-super-clock-report-buffer-name)))
 
-(defun org-super-clock-report-from-regexp (regexp)
-  "Display clock-report table for headlines which match REGEXP."
-  (org-super-clock-report--display
-   (org-super-clock-report--query
-    (org-super-clock-report--create-regexp-headline-filter regexp))))
-
 (defun org-super-clock-report-from-regexp-grouped (regexp grouper)
   "Display clock-report table for headlines which match REGEXP, grouped by GROUPER."
   (org-super-clock-report--display-grouped
@@ -351,6 +345,14 @@ TODO Actually use CLOCK-FILTER."
   (cl-first (ht-keys org-super-clock-report-clock-groupers))
   "String key of a clock grouped defined in `org-super-clock-report-clock-groupers'.")
 
+(defun org-super-clock-report-from-regexp (regexp)
+  "Display clock-report table for headlines which match REGEXP."
+  (interactive "MRegexp: ")
+  (org-super-clock-report--display
+   (org-super-clock-report--query
+    (org-super-clock-report--create-regexp-headline-filter regexp)
+    (ht-get org-super-clock-report-clock-filters
+            org-super-clock-report-current-clock-filter))))
 
 (defun org-super-clock-report ()
   "Open buffer for org-super-clock-report creation."
