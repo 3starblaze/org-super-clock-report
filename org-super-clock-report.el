@@ -313,23 +313,32 @@ TODO Actually use CLOCK-FILTER."
     (switch-to-buffer org-super-clock-report-buffer-name)))
 
 (defvar org-super-clock-report-headline-filters
-  (ht ("Regexp" #'org-super-clock-report--create-regexp-headline-filter)
+  (ht (nil (lambda (ast) (eq (cl-first ast) 'headline)))
+      ("Regexp" #'org-super-clock-report--create-regexp-headline-filter)
       ("List" #'org-super-clock-report--create-list-headline-filter)))
 (defvar org-super-clock-report-clock-filters
-  (ht ("Today" #'org-super-clock-report--today-clock-filter)
+  (ht (nil (lambda (ast) (eq (cl-first ast) 'clock)))
+      ("Today" #'org-super-clock-report--today-clock-filter)
       ("This month" #'org-super-clock-report--this-month-clock-filter)))
 (defvar org-super-clock-report-clock-groupers
-  (ht ("Daily" #'org-super-clock-report--daily-clock-grouper)))
+  (ht (nil (lambda (_clock-ast) t))
+      ("Daily" #'org-super-clock-report--daily-clock-grouper)))
 
 (defvar org-super-clock-report-current-headline-filter
-  (cl-first (ht-keys org-super-clock-report-headline-filters))
-  "String key of a headline filter defined in `org-super-clock-report-headline-filters'.")
+  nil
+  "Nil-able string key of a headline filter.
+
+Possible options defined in `org-super-clock-report-headline-filters'.")
 (defvar org-super-clock-report-current-clock-filter
-  (cl-first (ht-keys org-super-clock-report-clock-filters))
-  "String key of a clock filter defined in `org-super-clock-report-clock-filters'.")
+  nil
+  "Nil-able string key of a clock filter.
+
+Possible options defined in `org-super-clock-report-clock-filters'.")
 (defvar org-super-clock-report-current-clock-grouper
-  (cl-first (ht-keys org-super-clock-report-clock-groupers))
-  "String key of a clock grouped defined in `org-super-clock-report-clock-groupers'.")
+  nil
+  "Nil-able string key of a clock grouper.
+
+Possible options defined in `org-super-clock-report-clock-groupers'.")
 
 (defun org-super-clock-report-from-regexp (regexp)
   "Display clock-report table for headlines which match REGEXP."
