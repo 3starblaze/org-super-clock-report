@@ -312,6 +312,24 @@ TODO Actually use CLOCK-FILTER."
     (read-only-mode)
     (switch-to-buffer org-super-clock-report-buffer-name)))
 
+(defun org-super-clock-report--query-and-report
+    (headline-filter &optional clock-filter clock-grouper)
+  "Query current report and display the report.
+
+Filter functions (HEADLINE-FILTER, CLOCK-FILTER) are special functions that
+accept an ast and return a truthy value if the the ast matches the requirements.
+CLOCK-GROUPER is a function responsible for designating a group to every clock."
+  (if clock-grouper
+      (org-super-clock-report--display-grouped
+       (org-super-clock-report--query-grouped
+        headline-filter
+        clock-filter
+        clock-grouper))
+    (org-super-clock-report--display
+     (org-super-clock-report--query
+      headline-filter
+      clock-filter))))
+
 (defvar org-super-clock-report-headline-filters
   (ht (nil (lambda (ast) (eq (cl-first ast) 'headline)))
       ("Regexp" #'org-super-clock-report--create-regexp-headline-filter)
@@ -340,22 +358,25 @@ Possible options defined in `org-super-clock-report-clock-filters'.")
 
 Possible options defined in `org-super-clock-report-clock-groupers'.")
 
+(defun org-super-clock-report--implicit-query-and-report ()
+  "Dispatch global variables to `org-super-clock-report--query-and-report'."
+  (org-super-clock-report--query-and-report
+   (ht-get org-super-clock-report-headline-filters
+           org-super-clock-report-current-headline-filter)
+   (ht-get org-super-clock-report-clock-filters
+           org-super-clock-report-current-clock-filter)
+   (ht-get org-super-clock-report-clock-groupers
+           org-super-clock-report-current-clock-grouper)))
+
 (defun org-super-clock-report-from-regexp (regexp)
   "Display clock-report table for headlines which match REGEXP."
   (interactive "MRegexp: ")
-  (if (equal org-super-clock-report-current-clock-grouper nil)
-      (org-super-clock-report--display
-       (org-super-clock-report--query
-        (org-super-clock-report--create-regexp-headline-filter regexp)
-        (ht-get org-super-clock-report-clock-filters
-              org-super-clock-report-current-clock-filter)))
-    (org-super-clock-report--display-grouped
-     (org-super-clock-report--query-grouped
-      (org-super-clock-report--create-regexp-headline-filter regexp)
-      (ht-get org-super-clock-report-clock-filters
-              org-super-clock-report-current-clock-filter)
-      (ht-get org-super-clock-report-clock-groupers
-              org-super-clock-report-current-clock-grouper)))))
+  (org-super-clock-report--query-and-report
+   (org-super-clock-report--create-regexp-headline-filter regexp)
+   (ht-get org-super-clock-report-clock-filters
+           org-super-clock-report-current-clock-filter)
+   (ht-get org-super-clock-report-clock-groupers
+           org-super-clock-report-current-clock-grouper)))
 
 (defun org-super-clock-report ()
   "Open buffer for org-super-clock-report creation."
